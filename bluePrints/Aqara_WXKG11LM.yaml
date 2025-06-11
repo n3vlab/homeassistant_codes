@@ -1,53 +1,97 @@
+
+
 blueprint:
   name: Aqara Wireless Button WXKG11LM (Zigbee MQTT Trigger)
-  description: "Triggers actions based on Zigbee2MQTT button presses"
+  description: >
+    Tested with Aqara WXKG11LM Aqara Wireless Switch Mini.
+
+    Controller automation for executing any kind of action triggered by the provided
+    Xiaomi WXKG11LM Aqara Wireless Switch Mini.
+
+    You can have different actions on short press, long press, release, double press, and triple press.
+
+    Make sure to manually create a separate Text Helper per dimmer device and define its entity in the automation.
+    It's used to store the last controller event to filter possible empty events.
   domain: automation
   input:
+    mqtt_topic:
+      name: MQTT Topic
+      description: Topic of the Xiaomi WXKG11LM
+      default: zigbee2mqtt/<device name>
     helper_last_controller_event:
-      name: Helper Last Controller Event
+      name: (Required) Helper - Last Controller Event
+      description: >
+        Input Text used to store the last event fired by the controller.
+        You will need to manually create a text input Helper entity for this.
+      default: ""
       selector:
         entity:
-          domain: input_text
-    entity_id:
-      name: Entity to Set
+          domain:
+            - input_text
+          multiple: false
+    short:
+      name: SHORT button press
+      description: Action to run
+      default: []
       selector:
-        entity: {}
+        action: {}
+    long:
+      name: LONG button press
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    release:
+      name: RELEASE of button
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    double:
+      name: DOUBLE button press
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+    triple:
+      name: Triple button press
+      description: Action to run
+      default: []
+      selector:
+        action: {}
+mode: queued
+max_exceeded: silent
 
 trigger:
   - platform: mqtt
-    topic: zigbee2mqtt/<device name>
-
-variables:
-  command: "{{ trigger.payload_json.action | default('') }}"
-  prev_command: "{{ states(input.helper_last_controller_event) }}"
+    topic: !input mqtt_topic
 
 condition:
   - condition: template
-    value_template: "{{ command != '' }}"
+    value_template: "{{ trigger.payload_json.get('action', '') != '' }}"
 
 action:
+  - variables:
+      helper_last_controller_event: !input helper_last_controller_event
+      command: "{{ trigger.payload_json.get('action', '') }}"
+      prev_command: "{{ states(helper_last_controller_event) }}"
   - service: input_text.set_value
     data:
       entity_id: !input helper_last_controller_event
       value: "{{ command }}"
   - choose:
       - conditions:
-          - condition: template
-            value_template: "{{ command == 'single' }}"
-        sequence: []
+          - '{{ command == "single" }}'
+        sequence: !input short
       - conditions:
-          - condition: template
-            value_template: "{{ command == 'hold' }}"
-        sequence: []
+          - '{{ command == "hold" }}'
+        sequence: !input long
       - conditions:
-          - condition: template
-            value_template: "{{ command == 'release' }}"
-        sequence: []
+          - '{{ command == "release" }}'
+        sequence: !input release
       - conditions:
-          - condition: template
-            value_template: "{{ command == 'double' }}"
-        sequence: []
+          - '{{ command == "double" }}'
+        sequence: !input double
       - conditions:
-          - condition: template
-            value_template: "{{ command == 'triple' }}"
-        sequence: []
+          - '{{ command == "triple" }}'
+        sequence: !input triple
