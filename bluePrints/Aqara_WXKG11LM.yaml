@@ -1,42 +1,53 @@
-mode: queued
-max_exceeded: silent
-triggers:
-  - topic: zigbee2mqtt/<device name>
-    trigger: mqtt
-actions:
-  - variables:
-      helper_last_controller_event: ""
-      # Use the 'action' field from the payload; if it doesn't exist, set to empty string to avoid template warnings
-      command: "{{ trigger.payload_json.action | default('') }}"
-      prev_command: "{{ states(helper_last_controller_event) }}"
-  - data:
-      entity_id: ""
-      value: "{{ command }}"
-    action: input_text.set_value
-  - choose:
-      - conditions:
-          # Run this sequence if the command is 'single'
-          - "{{ command == 'single' }}"
-        sequence: []
-      - conditions:
-          # Run this sequence if the command is 'hold'
-          - "{{ command == 'hold' }}"
-        sequence: []
-      - conditions:
-          # Run this sequence if the command is 'release'
-          - "{{ command == 'release' }}"
-        sequence: []
-      - conditions:
-          # Run this sequence if the command is 'double'
-          - "{{ command == 'double' }}"
-        sequence: []
-      - conditions:
-          # Run this sequence if the command is 'triple'
-          - "{{ command == 'triple' }}"
-        sequence: []
-conditions:
-  # Only proceed if the command is not an empty string (i.e., 'action' exists in the payload)
+blueprint:
+  name: Aqara Wireless Button WXKG11LM (Zigbee MQTT Trigger)
+  description: ""
+  domain: automation
+  input:
+    helper_last_controller_event:
+      name: Helper Last Controller Event
+      selector:
+        entity:
+          domain: input_text
+    entity_id:
+      name: Entity to Set
+      selector:
+        entity: {}
+
+trigger:
+  - platform: mqtt
+    topic: zigbee2mqtt/<device name>
+
+variables:
+  command: "{{ trigger.payload_json.action | default('') }}"
+  prev_command: "{{ states(input.helper_last_controller_event) }}"
+
+condition:
   - condition: template
     value_template: "{{ command != '' }}"
-alias: Aqara Wireless Button WXKG11LM (Zigbee MQTT Trigger)
-description: ""
+
+action:
+  - service: input_text.set_value
+    data:
+      entity_id: !input helper_last_controller_event
+      value: "{{ command }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'single' }}"
+        sequence: []
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'hold' }}"
+        sequence: []
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'release' }}"
+        sequence: []
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'double' }}"
+        sequence: []
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'triple' }}"
+        sequence: []
