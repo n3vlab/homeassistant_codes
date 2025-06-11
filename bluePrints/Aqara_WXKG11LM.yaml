@@ -1,4 +1,5 @@
-
+# Blueprint Reference:
+# https://github.com/ludicrous-mode/Blueprints/blob/main/xiaomi_button_v2_zigbee2mqtt.yaml
 
 blueprint:
   name: Aqara Wireless Button WXKG11LM (Zigbee MQTT Trigger)
