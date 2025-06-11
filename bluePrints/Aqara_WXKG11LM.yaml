@@ -1,6 +1,6 @@
 blueprint:
   name: Aqara Wireless Button WXKG11LM (Zigbee MQTT Trigger)
-  description: ""
+  description: "Triggers actions based on Zigbee2MQTT button presses"
   domain: automation
   input:
     helper_last_controller_event:
